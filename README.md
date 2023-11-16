@@ -15,3 +15,5 @@ The following sections talks about how Ray is setup accross a P2P network.
 The main aim is to get the most basic form of the Ray Cluster working.
 Since this is currently a proof of concept repo, Later releases will focus
 on making it more stable based on the interest of the community.
+
+<img width="1762" alt="shapes at 23-11-16 20 07 15" src="https://github.com/Akilan1999/P2PRC-Ray/assets/31743758/b5fab822-76fe-422b-be53-7b8a75db2f76">
