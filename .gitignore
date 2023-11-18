@@ -1,4 +1,4 @@
-test/
+.venv/
 plugin/
 p2p/
 client/

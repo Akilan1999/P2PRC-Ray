@@ -3,7 +3,10 @@ from ctypes import cdll
 import ray
 import json
 import time
-import paramiko
+import subprocess
+import os
+import atexit
+
 
 
 # Class to create string to pass as string function 
@@ -42,10 +45,9 @@ def StartContainer(ip=""):
 # the Ray head node
 def SetupRayWorker(HeadNode="", ServerIP="", ServerPort=""):
     print(HeadNode + " " + ServerPort)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    # ssh.connect(ServerIP, port=ServerPort, username="master", password="password")
-    # ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(cmd_to_execute)
+    # Setup Ray worker node on the Docker container and connect 
+    # it to the head node.
+    subprocess.call(["sh","setup_ray_worker.sh",ServerIP,ServerPort, HeadNode])
 
 
 
@@ -57,12 +59,18 @@ p2prc = cdll.LoadLibrary("SharedOBjects/p2prc.so")
 p2prc.Init("")
 
 # # Initialise ray
-ray.init(dashboard_port=2301)
+# ray.init(dashboard_port=2301)
 
-# subprocess.call(["ray", "start","--head","--dashboard-port", "2301"])
+subprocess.call(["ray", "start","--head","--dashboard-port", "2301","--port","5801"])
 
-# Map Port for Ray head node
-res = P2PRCMappingRay(port="2301")
+# Map Port for Ray dashboard
+Dashboard = P2PRCMappingRay(port="2301")
+
+print(Dashboard)
+
+headNode = P2PRCMappingRay(port="5801")
+
+print(headNode)
 
 # View IP Table information 
 p2prc.ViewIPTable.restype = c_char_p
@@ -86,7 +94,12 @@ for node in ipTableObject["ip_address"]:
     # Parse response
     for port in Container["Ports"]["Port"]:
         if port["PortName"] == "SSH":
-            SetupRayWorker(ServerIP="0.0.0.0",ServerPort=str(port["ExternalPort"]),HeadNode=res)
+            SetupRayWorker(ServerIP="0.0.0.0",ServerPort=str(port["ExternalPort"]),HeadNode=headNode)
+
+# Run Ray sample program 
+# Ex: RAY_ADDRESS='http://139.59.162.154:54792' ray job submit -- python sample_ray_program.py
+# os.environ["RAY_ADDRESS"] = "http://" + res
+# subprocess.call(["ray","job", "submit", "--", "python", "sample_ray_program.py"])
 
 
 
@@ -98,3 +111,10 @@ def StallLoop():
         pass
 
 StallLoop()
+
+# Exit handler to kill ray
+def exit_handler():
+    print("exit handler triggered to stop Ray processes")
+    subprocess.call(["ray","stop"])
+
+atexit.register(exit_handler)
