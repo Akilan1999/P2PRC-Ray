@@ -31,7 +31,9 @@ Seriously just set it as a warning.
 ### F\*\*k off with your networking
 Why in the f\*\*king hell is ray using 127.0.0.1 as the head node when I clearly set the public NAT traversed IP
 from worker node.
+Thanks for this fix: https://github.com/ray-project/ray/issues/12639#issuecomment-739615969
 
 I would rant more but it's a waste of time.
+
 
 
