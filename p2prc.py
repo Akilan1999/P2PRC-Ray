@@ -6,6 +6,7 @@ import time
 import subprocess
 import os
 import atexit
+from urllib.parse import urlparse
 
 
 
@@ -49,6 +50,16 @@ def SetupRayWorker(HeadNode="", ServerIP="", ServerPort=""):
     # it to the head node.
     subprocess.call(["sh","setup_ray_worker.sh",ServerIP,ServerPort, HeadNode])
 
+# Start the container after the Ray head node is created.
+def StartContianerProcedure(ipAddress="", serverPort="",headNode=""):
+    ContainerResponse = StartContainer(ip=ipAddress + ":" + serverPort)
+    Container = json.loads(ContainerResponse)
+    # Parse response
+    for port in Container["Ports"]["Port"]:
+        if port["PortName"] == "SSH":
+            SetupRayWorker(ServerIP=ipAddress,ServerPort=str(port["ExternalPort"]),HeadNode=headNode)
+
+
 
 
 
@@ -61,8 +72,6 @@ p2prc.Init("")
 # # Initialise ray
 # ray.init(dashboard_port=2301)
 
-subprocess.call(["ray", "start","--head","--dashboard-port", "2301","--port","5801"])
-
 # Map Port for Ray dashboard
 Dashboard = P2PRCMappingRay(port="2301")
 
@@ -71,6 +80,11 @@ print(Dashboard)
 headNode = P2PRCMappingRay(port="5801")
 
 print(headNode)
+
+# ipv4address = urlparse(headNode)
+# print(str(ipv4address)
+
+subprocess.call(["ray", "start","--head","--dashboard-port", "2301","--port","5801"])
 
 # View IP Table information 
 p2prc.ViewIPTable.restype = c_char_p
@@ -86,16 +100,14 @@ p2prc.Server()
 time.sleep(5)
 
 
-for node in ipTableObject["ip_address"]: 
+# for node in ipTableObject["ip_address"]: 
     # Start Ray on all Nodes except the root node
     # For testing reasons (Note this is not true orchestration)
-    ContainerResponse = StartContainer(ip="0.0.0.0" + ":" + "8088")
-    Container = json.loads(ContainerResponse)
-    # Parse response
-    for port in Container["Ports"]["Port"]:
-        if port["PortName"] == "SSH":
-            SetupRayWorker(ServerIP="0.0.0.0",ServerPort=str(port["ExternalPort"]),HeadNode=headNode)
-
+# StartContianerProcedure(ipAddress="0.0.0.0", serverPort="8088",headNode=headNode)
+# print("-------------- 2 -----------------")
+# StartContianerProcedure(ipAddress="0.0.0.0", serverPort="8088",headNode=headNode)
+# print("-------------- 3 -----------------")
+# StartContianerProcedure(ipAddress="0.0.0.0", serverPort="8088",headNode=headNode)
 # Run Ray sample program 
 # Ex: RAY_ADDRESS='http://139.59.162.154:54792' ray job submit -- python sample_ray_program.py
 # os.environ["RAY_ADDRESS"] = "http://" + res
